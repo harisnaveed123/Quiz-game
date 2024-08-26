@@ -1,32 +1,48 @@
 require 'csv'
 require 'optparse'
+require 'timeout'
 
 filename = 'problems.csv'
+time_limit = 30 # seconds
 
-# Option parsing to allow custom file name via a flag
+# Parsing
 OptionParser.new do |opts|
   opts.on('-f FILENAME', '--file FILENAME', 'CSV file with quiz questions') do |file|
     filename = file
   end
+
+  opts.on('-t SECONDS', '--time SECONDS', 'Time limit for the quiz in seconds') do |seconds|
+    time_limit = seconds.to_i
+  end
 end.parse!
 
-# counters
+# Initialize counters
 correct_answers = 0
 total_questions = 0
 
-# Read the CSV file and start the quiz
-CSV.foreach(filename) do |row|
-  question, correct_answer = row
+# Start quiz
+puts "Press Enter to start the quiz..."
+gets
 
-  total_questions += 1
+# Start the quiz with a timer
+begin
+  Timeout.timeout(time_limit) do
+    CSV.foreach(filename) do |row|
+      question, correct_answer = row
 
-  puts "Question #{total_questions}: #{question} = ?"
-  user_answer = gets.chomp
+      # Increment total questions counter
+      total_questions += 1
 
-  # Check if the answer is correct
-  if user_answer == correct_answer
-    correct_answers += 1
+      puts "Question #{total_questions}: #{question} = ?"
+      user_answer = gets.chomp
+
+      if user_answer == correct_answer
+        correct_answers += 1
+      end
+    end
   end
+rescue Timeout::Error
+  puts "\nTime's up!"
 end
 
 # Output
